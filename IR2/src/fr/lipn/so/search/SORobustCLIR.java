@@ -118,7 +118,7 @@ public class SORobustCLIR {
 		    	  QueryParser sparser = new QueryParser(Version.LUCENE_44, "docs", sanalyzer);
 		    	  
 		    	  StringBuffer ids = new StringBuffer();
-		    	  HashMap<String, Float> sentIdScores= new HashMap<String, Float>();
+		    	  HashMap<String, Double> sentIdScores= new HashMap<String, Double>();
 		    	  
 				  //System.err.println("Searching for: "+query.toString());
 				  
@@ -130,11 +130,11 @@ public class SORobustCLIR {
 				  for (int i = 0; i < Math.min(K, n); i++) {
 			    	Document doc = fsearcher.doc(hits[i].doc);
 				    String id = doc.get("id");
-				    Float score = new Float(hits[i].score);
+				    Double score = new Double(hits[i].score);
 				    //System.err.println("found doc: "+id+" : "+score);
 				    ids.append(id);
 				    ids.append(" ");
-				    sentIdScores.put(id, new Float(score));
+				    sentIdScores.put(id, new Double(score));
 			      }
 				  
 				  //now send the docs to the second order index
@@ -151,9 +151,10 @@ public class SORobustCLIR {
 				    Document doc = ssearcher.doc(shits[i].doc);
 					String sid = doc.get("id"); //the final document to be ranked
 					String docScores = doc.get("sentscores").trim();
+					double bm25score = shits[i].score;
 					//System.err.println(sid);
 					if(docScores !=null) {
-						WeightedDocument wd = new WeightedDocument(sid, docScores, i);
+						WeightedDocument wd = new WeightedDocument(sid, docScores, i, bm25score);
 						wd.setScore(sentIdScores);
 						wresults.add(wd);
 					} else {
@@ -164,8 +165,8 @@ public class SORobustCLIR {
 				  Collections.sort(wresults);
 				  for(int k=0; k< wresults.size(); k++){
 					  WeightedDocument wd = wresults.elementAt(k);
-					  String id =wd.getID();
-					  Float score = wd.getScore();
+					  String id =wd.getID().trim();
+					  Double score = wd.getScore();
 					  
 					  System.out.println(rcq.id+" Q0 "+id+" "+(k+1)+" "+String.format(Locale.ENGLISH, "%.4f", score.floatValue())+" sosim");
 				  }

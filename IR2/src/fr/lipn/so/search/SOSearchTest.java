@@ -111,7 +111,7 @@ public class SOSearchTest {
 			    	  QueryParser sparser = new QueryParser(Version.LUCENE_44, "docs", sanalyzer);
 			    	  
 			    	  StringBuffer ids = new StringBuffer();
-			    	  HashMap<String, Float> sentIdScores= new HashMap<String, Float>();
+			    	  HashMap<String, Double> sentIdScores= new HashMap<String, Double>();
 			    	  
 					  System.err.println("Searching for: "+query.toString());
 					  
@@ -123,11 +123,11 @@ public class SOSearchTest {
 					  for (int i = 0; i < Math.min(K, n); i++) {
 				    	Document doc = fsearcher.doc(hits[i].doc);
 					    String id = doc.get("id");
-					    Float score = new Float(hits[i].score);
+					    Double score = new Double(hits[i].score);
 					    //System.err.println("found doc: "+id+" : "+score);
 					    ids.append(id);
 					    ids.append(" ");
-					    sentIdScores.put(id, new Float(score));
+					    sentIdScores.put(id, new Double(score));
 				      }
 					  
 					  //now send the docs to the second order index
@@ -144,9 +144,10 @@ public class SOSearchTest {
 					    Document doc = ssearcher.doc(shits[i].doc);
 						String sid = doc.get("id"); //the final document to be ranked
 						String docScores = doc.get("sentscores").trim();
+						Double bm25score = new Double(shits[i].score);
 						//System.err.println(id);
 						if(docScores !=null) {
-							WeightedDocument wd = new WeightedDocument(sid, docScores, i);
+							WeightedDocument wd = new WeightedDocument(sid, docScores, i, bm25score);
 							wd.setScore(sentIdScores);
 							wresults.add(wd);
 						} else {
@@ -305,7 +306,7 @@ public class SOSearchTest {
 						  Document doc = searcher.doc(hits[rankedDocs.elementAt(i).getIndex()].doc);
 						  String path = doc.get("id");
 						  if (path != null) {
-							  System.out.println((i+1) + ". " + path + " score="+hits[i].score);
+							  System.out.println((i+1) + ". " + path + " basescore="+rankedDocs.elementAt(i).baseScore()+" new_score="+rankedDocs.elementAt(i).getScore());
 							  System.out.println("\tID: " + doc.get("id"));
 							  System.out.println("Titre: " + doc.get("title"));
 							  String text=doc.get("text");
