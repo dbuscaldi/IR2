@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
 
+import fr.lipn.so.common.IR2;
+
 public class WeightedDocument implements Comparable<WeightedDocument> {
 	protected Double weight;
 	private String docID;
@@ -34,6 +36,10 @@ public class WeightedDocument implements Comparable<WeightedDocument> {
 	}
 	
 	public void setScore(HashMap<String, Double> queryScores){
+		if(IR2.DOCWEIGHT==IR2.DOCVECS) {
+			this.weight=baseScore;
+			return;
+		}
 		//set the score of this document according to the query scores
 		
 		//System.err.println("setting scores for document "+this.docID);
@@ -72,20 +78,23 @@ public class WeightedDocument implements Comparable<WeightedDocument> {
 		    	sumScores+=tmpWeight;
 		    	numnotZero++;
 		    	
-		    	//Uncomment this if document similarity is the max of all sentence similarities:
-		    	/*
-		    	if(tmpWeight > this.weight.doubleValue()) {
-		    		this.weight = new Double(tmpWeight);
+		    	if(IR2.PHRASE_COMB==IR2.MAX) {
+		    	//document similarity is the max of all sentence similarities:
+		    		if(tmpWeight > this.weight.doubleValue()) {
+		    			this.weight = new Double(tmpWeight);
 		    	
+		    		}
 		    	}
-		    	*/
+		    	
 	    	}
 		}
 		
-		//Uncomment this if document similarity is ANZ over sentence similarities:
-		if(sumScores > 0) {
+		//document similarity is ANZ over sentence similarities:
+		if(sumScores > 0 && IR2.PHRASE_COMB==IR2.ANZ) {
 			this.weight=sumScores/(double)numnotZero;
 		}
+		
+		if(IR2.DOCWEIGHT==IR2.IRSIM_DOCVECS_COMB) this.weight=Math.sqrt(this.weight*baseScore);
 		
 	}
 	
