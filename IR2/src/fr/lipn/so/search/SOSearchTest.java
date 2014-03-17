@@ -30,6 +30,7 @@ import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 
+import fr.lipn.so.common.IR2;
 import fr.lipn.so.indexing.BooleanSimilarity;
 import fr.lipn.so.ranking.WeightedDocument;
 
@@ -39,16 +40,26 @@ public class SOSearchTest {
 	private static int MAX_DOCS=1000;
 	
 	public static void main(String[] args) throws IOException, ParseException {
-		String fIndex = "/tempo/corpora/AQUAINT_indexed";
-		String sIndex = "/tempo/corpora/secondIndex";
+		try {
+			if(args[0].startsWith("-c")) CLASSIC=true;
+		} catch (Exception e) {
+			CLASSIC=false;
+		}
+		if(CLASSIC) System.err.println("Using standard search");
+		else System.err.println("Second Order IR2 search");
+
+		String fIndex = "/tempo/indexes/AQUAINT_indexed";
+		//String fIndex = "/tempo/corpora/DBPedia/indexed";
+		String sIndex = "/tempo/indexes/secondIndex";
 		
-		String field = "text";
+		String field = "text"; //for aquaint
+		//String field = "categories"; //forDBPedia
 		
 		String queries = null;
 		int repeat = 0;
 		boolean raw = false;
 		String queryString = null;
-		int hitsPerPage = 10;
+		int hitsPerPage = 5;
 		
 		//FO reader
 		IndexReader freader = IndexReader.open(FSDirectory.open(new File(fIndex)));
@@ -119,10 +130,10 @@ public class SOSearchTest {
 					  ScoreDoc[] hits = results.scoreDocs;
 					  
 					  int n = results.totalHits;
-					  
+
 					  for (int i = 0; i < Math.min(K, n); i++) {
 				    	Document doc = fsearcher.doc(hits[i].doc);
-					    String id = doc.get("id");
+					    String id = doc.get("id"); //NOTE: for DBPedia is title, for AQUAINT id
 					    Double score = new Double(hits[i].score);
 					    //System.err.println("found doc: "+id+" : "+score);
 					    ids.append(id);
@@ -131,7 +142,19 @@ public class SOSearchTest {
 				      }
 					  
 					  //now send the docs to the second order index
-					  Query squery = sparser.parse(ids.toString().trim());
+
+					  Query squery= null;
+					  if(!(IR2.DOCWEIGHT==IR2.HYBRID_TEXT_SEM)) squery = sparser.parse(ids.toString().trim());
+					  else {
+						  String [] txt = line.split(" ");
+						  StringBuffer txtquery= new StringBuffer();
+						  for(String str : txt) {
+							  txtquery.append("text:");
+							  txtquery.append(str);
+							  txtquery.append(" ");
+						  }
+						  squery = sparser.parse(txtquery.toString()+ids.toString().trim());
+					  }
 					  System.err.println("Second Order search: searching for: "+squery.toString());
 					  
 					  TopDocs sresults = ssearcher.search(squery, MAX_DOCS);
@@ -221,7 +244,7 @@ public class SOSearchTest {
 			          System.out.println("\tID: " + doc.get("id"));
 			          System.out.println("Titre: " + doc.get("title"));
 			          String text=doc.get("text");
-			          if(text!= null) System.out.println(formatTextWidth(doc.get("text"), 120));
+			          //if(text!= null) System.out.println(formatTextWidth(doc.get("text"), 120));
 			        } else {
 			          System.out.println((i+1) + ". " + "No title for this document");
 			        }
@@ -310,7 +333,7 @@ public class SOSearchTest {
 							  System.out.println("\tID: " + doc.get("id"));
 							  System.out.println("Titre: " + doc.get("title"));
 							  String text=doc.get("text");
-							  if(text!= null) System.out.println(formatTextWidth(doc.get("text"), 120));
+							  //if(text!= null) System.out.println(formatTextWidth(doc.get("text"), 120));
 						  } else {
 							  System.out.println((i+1) + ". " + "No title for this document");
 						  }

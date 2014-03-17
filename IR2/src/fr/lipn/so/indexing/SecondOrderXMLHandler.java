@@ -32,6 +32,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.process.DocumentPreprocessor;
+import fr.lipn.so.common.IR2;
 
 public class SecondOrderXMLHandler extends DefaultHandler {
 	  
@@ -176,7 +177,13 @@ public class SecondOrderXMLHandler extends DefaultHandler {
 		  DocumentPreprocessor dp = new DocumentPreprocessor(new StringReader(text));
 		  
 		  Iterator<List<HasWord>> it = dp.iterator();
+		  //int nSentences=0;
 		  while (it.hasNext()) {
+			 /*
+			 if(IR2.SENTENCE_LIMIT>0){
+				 if (nSentences > IR2.SENTENCE_LIMIT) break;
+			 }
+			 */
 		     StringBuilder sentenceSb = new StringBuilder();
 		     List<HasWord> sentence = it.next();
 		     for (HasWord token : sentence) {
@@ -186,6 +193,7 @@ public class SecondOrderXMLHandler extends DefaultHandler {
 		        sentenceSb.append(token);
 		     }
 		     sentenceList.add(sentenceSb.toString());
+		     //nSentences++;
 		  }
 		  /*
 		  for(String sentence:sentenceList) {
@@ -198,7 +206,7 @@ public class SecondOrderXMLHandler extends DefaultHandler {
 	  
 	  private void setSimilarityDataForSentence(String sentence){
 		  try {
-			  QueryParser parser = new QueryParser(Version.LUCENE_44, "text", analyzer);
+			  QueryParser parser = new QueryParser(Version.LUCENE_44, IR2.RELEVANT_FIELD, analyzer);
 			  sentence=sentence.replaceAll( "[^\\w]", " ");
 			  if(sentence.trim().length()>0) {
 				  Query query = parser.parse(sentence.toLowerCase().trim());
@@ -213,6 +221,7 @@ public class SecondOrderXMLHandler extends DefaultHandler {
 				  for (int i = 0; i < Math.min(K, n); i++) {
 			    	Document doc = searcher.doc(hits[i].doc);
 				    String id = doc.get("id");
+				    //id=id.replaceAll("[\\W]", "_");
 				    Float score = new Float(hits[i].score);
 				    //System.err.println("found doc: "+id+" : "+score);
 				    ids.add(id);
@@ -221,7 +230,7 @@ public class SecondOrderXMLHandler extends DefaultHandler {
 			      }
 				  
 				  sentIdScores.append("|");
-				 // System.err.println("sentIdScores: "+sentIdScores);
+				  //System.err.println("sentIdScores: "+sentIdScores);
 			  }
 		  
 		  } catch (Exception e) {

@@ -18,6 +18,7 @@ public class WeightedDocument implements Comparable<WeightedDocument> {
 		this.index=index; //index in hits
 		this.sscores= new Vector<HashMap<String,Double>>();
 		String [] sentences = sentenceScores.split("\\|");
+		
 		for(String s : sentences) {
 			HashMap<String, Double> tm = new HashMap<String, Double>();
 			s=s.trim();
@@ -36,7 +37,7 @@ public class WeightedDocument implements Comparable<WeightedDocument> {
 	}
 	
 	public void setScore(HashMap<String, Double> queryScores){
-		if(IR2.DOCWEIGHT==IR2.DOCVECS) {
+		if(IR2.DOCWEIGHT==IR2.DOCVECS || IR2.DOCWEIGHT==IR2.HYBRID_TEXT_SEM) {
 			this.weight=baseScore;
 			return;
 		}
@@ -47,7 +48,9 @@ public class WeightedDocument implements Comparable<WeightedDocument> {
 		double sumScores=0d;
 		int numnotZero=0;
 		
+		int ns=0; //number of sentences
 		for(HashMap<String, Double> map : this.sscores){
+			ns++;
 			HashSet<String> uniqueIDs = new HashSet<String>();
 			uniqueIDs.addAll(queryScores.keySet());
 	    	uniqueIDs.retainAll(map.keySet()); //intersection
@@ -71,8 +74,10 @@ public class WeightedDocument implements Comparable<WeightedDocument> {
 		    		
 		    		sum+=(Math.sqrt(Math.pow((s1-s2), 2)))/Math.max(s1, s2);
 		    	}
+		    	double tmpWeight=0;
+		    	if(!IR2.TOP_PRIORITY) tmpWeight=(1-(sum/(double)uniqueIDs.size()))*saliency; //includes saliency or normalization factor
+		    	else tmpWeight=(1-(sum/(double)uniqueIDs.size()))*saliency*(1/Math.log(ns+0.1d)); //includes smoothing factor 
 		    	
-		    	double tmpWeight=(1-(sum/(double)uniqueIDs.size()))*saliency; //includes saliency or normalization factor
 		    	//double tmpWeight=1-(sum/(double)uniqueIDs.size()); //old formula
 		    	//System.err.println("sentence similarity: "+tmpWeight);
 		    	sumScores+=tmpWeight;

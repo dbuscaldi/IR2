@@ -27,6 +27,7 @@ import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 
+import fr.lipn.so.common.IR2;
 import fr.lipn.so.indexing.BooleanSimilarity;
 import fr.lipn.so.ranking.WeightedDocument;
 
@@ -45,8 +46,8 @@ public class SORobustCLIR {
 	
 	
 	public static void main(String[] args) throws IOException, ParseException {
-		String fIndex = "/tempo/corpora/AQUAINT_indexed";
-		String sIndex = "/tempo/corpora/secondIndex";
+		String fIndex = "/tempo/corpora/AQUAINT_indexed"; //the index of the reference corpus
+		String sIndex = "/tempo/corpora/secondIndex"; //the index of the corpus to be searched
 		
 		String field = "text";
 		
@@ -115,7 +116,7 @@ public class SORobustCLIR {
 			      }
 
 		      } else {
-		    	  QueryParser sparser = new QueryParser(Version.LUCENE_44, "docs", sanalyzer);
+		    	  QueryParser sparser = new QueryParser(Version.LUCENE_44, "docs", sanalyzer); //search on docs index (no scores)
 		    	  
 		    	  StringBuffer ids = new StringBuffer();
 		    	  HashMap<String, Double> sentIdScores= new HashMap<String, Double>();
@@ -138,7 +139,18 @@ public class SORobustCLIR {
 			      }
 				  
 				  //now send the docs to the second order index
-				  Query squery = sparser.parse(ids.toString().trim());
+				  Query squery= null;
+				  if(!(IR2.DOCWEIGHT==IR2.HYBRID_TEXT_SEM)) squery = sparser.parse(ids.toString().trim());
+				  else {
+					  String [] txt = line.split(" ");
+					  StringBuffer txtquery= new StringBuffer();
+					  for(String str : txt) {
+						  txtquery.append("text:");
+						  txtquery.append(str);
+						  txtquery.append(" ");
+					  }
+					  squery = sparser.parse(txtquery.toString()+ids.toString().trim());
+				  }
 				  //System.err.println("Second Order search: searching for: "+squery.toString());
 				  
 				  TopDocs sresults = ssearcher.search(squery, MAX_DOCS);
@@ -150,7 +162,7 @@ public class SORobustCLIR {
 				  for (int i = 0; i < Math.min(MAX_DOCS, sn); i++) {
 				    Document doc = ssearcher.doc(shits[i].doc);
 					String sid = doc.get("id"); //the final document to be ranked
-					String docScores = doc.get("sentscores").trim();
+					String docScores = doc.get("sentscores").trim(); //retrieves the scores by sentence
 					double bm25score = shits[i].score;
 					//System.err.println(sid);
 					if(docScores !=null) {

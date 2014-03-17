@@ -28,10 +28,12 @@ public class SecondIndexer {
 	public static LexicalizedParser parser;
 	
 	private static String firstIndex = "/tempo/corpora/AQUAINT_indexed";
+	//private static String firstIndex = "/tempo/corpora/DBPedia/indexed";
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		parser = LexicalizedParser.loadModel("lib/englishPCFG.ser.gz");
+		//String indexPath = "/tempo/corpora/secondIndexWiki"; //where to store the index
 		String indexPath = "/tempo/corpora/secondIndex"; //where to store the index
 		String docsPath = "/tempo/corpora/CLEF/english"; //documents to analyze
 		
